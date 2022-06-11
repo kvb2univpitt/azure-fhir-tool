@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.min.css" th:href="@{/bootstrap/css/bootstrap.min.css}" />
+        <title>Azure FHIR Tool</title>
+        <style>
+            body {
+                background-color: #f5f5f5;
+            }
+            .login {
+                max-width: 400px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container pt-4">
+            <header>
+                <div class="d-flex flex-column flex-md-row align-items-center pb-3 mb-4 border-bottom">
+                    <div class="d-flex align-items-center text-dark">
+                        <span class="fs-1">Azure FHIR Tool</span>
+                    </div>
+                </div>
+
+                <p class="fs-5">A tool for viewing and managing FHIR resources on Azure.</p>
+                <div class="login pt-5 mx-auto text-center">                  
+                    <a class="w-100  btn btn-secondary btn-lg py-3" href="#" th:href="@{/fhir}" role="button">Log In</a>
+                </div>
+            </header>
+        </div>
+    </body>
+</html>

@@ -19,7 +19,7 @@
         <spring-cloud-azure.version>4.2.0</spring-cloud-azure.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <start-class>edu.pitt.dbmi.azurefhirtool.AzureFhirToolApplication</start-class>
+        <start-class>edu.pitt.dbmi.azure.fhir.tool.AzureFhirToolApplication</start-class>
     </properties>
 
     <dependencies>

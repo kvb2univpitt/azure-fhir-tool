@@ -22,20 +22,20 @@ import java.io.Serializable;
 
 /**
  *
- * May 11, 2022 1:50:12 PM
+ * May 29, 2022 1:14:12 AM
  *
  * @author Kevin V. Bui (kvb2univpitt@gmail.com)
  */
-public class BasicPatient implements Serializable {
+public class BasicObservation implements Serializable {
 
-    private static final long serialVersionUID = -8776989891996969297L;
+    private static final long serialVersionUID = 1749402445707922814L;
 
     private String id;
-    private String lastName;
-    private String firstName;
-    private String gender;
+    private String category;
+    private String observation;
+    private String status;
 
-    public BasicPatient() {
+    public BasicObservation() {
     }
 
     public String getId() {
@@ -46,28 +46,28 @@ public class BasicPatient implements Serializable {
         this.id = id;
     }
 
-    public String getLastName() {
-        return lastName;
+    public String getCategory() {
+        return category;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setCategory(String category) {
+        this.category = category;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public String getObservation() {
+        return observation;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+    public void setObservation(String observation) {
+        this.observation = observation;
     }
 
-    public String getGender() {
-        return gender;
+    public String getStatus() {
+        return status;
     }
 
-    public void setGender(String gender) {
-        this.gender = gender;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
 }

@@ -18,9 +18,6 @@
  */
 package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 
-import ca.uhn.fhir.parser.IParser;
-import edu.pitt.dbmi.azure.fhir.tool.service.fhir.PatientResourceService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.stereotype.Controller;
@@ -29,30 +26,21 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  *
- * May 20, 2022 10:47:40 AM
+ * May 29, 2022 12:54:50 AM
  *
  * @author Kevin V. Bui (kvb2univpitt@gmail.com)
  */
 @Controller
-public class PatientController {
+public class ObservationController {
 
-    private final PatientResourceService patientResourceService;
-    private final IParser jsonParser;
-
-    @Autowired
-    public PatientController(PatientResourceService patientResourceService, IParser jsonParser) {
-        this.patientResourceService = patientResourceService;
-        this.jsonParser = jsonParser;
-    }
-
-    @GetMapping("/fhir/patients")
-    public String showPatientResourceListPage(
+    @GetMapping("/fhir/observations")
+    public String showObservationResourceListPage(
             @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
             final Model model) {
         model.addAttribute("authenName", authorizedClient.getPrincipalName());
-        model.addAttribute("patient", true);
+        model.addAttribute("observation", true);
 
-        return "fhir/patients";
+        return "fhir/observations";
     }
 
 }

@@ -25,7 +25,7 @@ import edu.pitt.dbmi.azure.fhir.tool.service.AbstractResourceService;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Observation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -33,30 +33,30 @@ import org.springframework.stereotype.Service;
 
 /**
  *
- * May 10, 2022 8:39:35 PM
+ * May 28, 2022 8:07:35 PM
  *
  * @author Kevin V. Bui (kvb2univpitt@gmail.com)
  */
 @Service
-public class PatientResourceService extends AbstractResourceService {
+public class ObservationResourceService extends AbstractResourceService {
 
     @Autowired
-    public PatientResourceService(@Value("${fhir.url}") String fhirUrl, FhirContext fhirContext) {
+    public ObservationResourceService(@Value("${fhir.url}") String fhirUrl, FhirContext fhirContext) {
         super(fhirUrl, fhirContext);
     }
 
-    public List<Patient> getPatients(OAuth2AccessToken accessToken) {
+    public List<Observation> getObservations(OAuth2AccessToken accessToken) {
         IGenericClient client = getClient(accessToken);
 
         Bundle bundle = client
                 .search()
-                .forResource(Patient.class)
+                .forResource(Observation.class)
                 .returnBundle(Bundle.class)
                 .cacheControl(new CacheControlDirective().setNoCache(true))
                 .execute();
 
         return fetchAllResources(client, bundle).stream()
-                .map(e -> (Patient) e)
+                .map(e -> (Observation) e)
                 .collect(Collectors.toList());
     }
 

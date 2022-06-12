@@ -18,6 +18,9 @@
  */
 package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 
+import ca.uhn.fhir.parser.IParser;
+import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
@@ -34,6 +37,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class ApplicationController {
 
+    private final ResourceCountService resourceCountService;
+    private final IParser jsonParser;
+
+    @Autowired
+    public ApplicationController(ResourceCountService resourceCountService, IParser jsonParser) {
+        this.resourceCountService = resourceCountService;
+        this.jsonParser = jsonParser;
+    }
+
     @GetMapping("/")
     public String showIndexPage(final Authentication authen) {
         return (authen == null)
@@ -43,9 +55,12 @@ public class ApplicationController {
 
     @GetMapping("/fhir")
     public String showMainResourcePage(
-            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
             final Model model) {
-        model.addAttribute("authenName", authorizedClient.getPrincipalName());
+        model.addAttribute("authenName", authClient.getPrincipalName());
+        model.addAttribute("patientCounts", resourceCountService.getPatientCounts(authClient.getAccessToken()));
+        model.addAttribute("encounterCounts", resourceCountService.getEncounterCounts(authClient.getAccessToken()));
+        model.addAttribute("observationCounts", resourceCountService.getObservationCounts(authClient.getAccessToken()));
 
         return "fhir/dashboard";
     }

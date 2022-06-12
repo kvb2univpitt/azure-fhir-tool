@@ -16,36 +16,33 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301  USA
  */
-package edu.pitt.dbmi.azure.fhir.tool.conf;
+package edu.pitt.dbmi.azure.fhir.tool.utils;
 
-import ca.uhn.fhir.context.FhirContext;
-import ca.uhn.fhir.parser.IParser;
-import edu.pitt.dbmi.azure.fhir.tool.utils.ResourceHelper;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.hl7.fhir.r4.model.HumanName;
 
 /**
  *
- * Jun 11, 2022 4:02:28 PM
+ * Jun 12, 2022 2:15:10 PM
  *
- * @author Kevin V. Bui (kvb2@pitt.edu)
+ * @author Kevin V. Bui (kvb2univpitt@gmail.com)
  */
-@Configuration
-public class AppConfig {
+public final class ResourceHelper {
 
-    @Bean
-    public FhirContext fhirContext() {
-        return FhirContext.forR4();
+    private final ObjectMapper objectMapper;
+
+    public ResourceHelper() {
+        this.objectMapper = new ObjectMapper();
     }
 
-    @Bean
-    public IParser jsonParser(FhirContext fhirContext) {
-        return fhirContext.newJsonParser();
-    }
-
-    @Bean
-    public ResourceHelper resourceHelper() {
-        return new ResourceHelper();
+    public String getPatientOfficialName(List<HumanName> humanNames) {
+        return humanNames.stream()
+                .filter(name -> name.getUse() == HumanName.NameUse.OFFICIAL)
+                .map(name -> String.format("%s %s", name.getGivenAsSingleString(), name.getFamily()))
+                .collect(Collectors.joining(", "))
+                .trim();
     }
 
 }

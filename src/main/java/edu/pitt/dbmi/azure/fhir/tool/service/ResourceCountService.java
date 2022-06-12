@@ -21,13 +21,10 @@ package edu.pitt.dbmi.azure.fhir.tool.service;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.api.SummaryEnum;
-import ca.uhn.fhir.rest.client.api.IGenericClient;
-import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Service;
@@ -39,24 +36,10 @@ import org.springframework.stereotype.Service;
  * @author Kevin V. Bui (kvb2univpitt@gmail.com)
  */
 @Service
-public class ResourceCountService {
+public class ResourceCountService extends AbstractResourceService {
 
-    private final String fhirUrl;
-    private final FhirContext fhirContext;
-
-    @Autowired
-    public ResourceCountService(
-            @Value("${fhir.url}") String fhirUrl,
-            FhirContext fhirContext) {
-        this.fhirUrl = fhirUrl;
-        this.fhirContext = fhirContext;
-    }
-
-    private IGenericClient getClient(OAuth2AccessToken accessToken) {
-        IGenericClient client = fhirContext.newRestfulGenericClient(fhirUrl);
-        client.registerInterceptor(new BearerTokenAuthInterceptor(accessToken.getTokenValue()));
-
-        return client;
+    public ResourceCountService(@Value("${fhir.url}") String fhirUrl, FhirContext fhirContext) {
+        super(fhirUrl, fhirContext);
     }
 
     public int getPatientCounts(OAuth2AccessToken accessToken) {

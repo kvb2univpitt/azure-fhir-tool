@@ -18,9 +18,9 @@
  */
 package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 
-import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
+import ca.uhn.fhir.parser.IParser;
+import edu.pitt.dbmi.azure.fhir.tool.service.fhir.PatientResourceService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.stereotype.Controller;
@@ -29,36 +29,30 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  *
- * Jun 11, 2022 4:04:25 PM
+ * Jun 12, 2022 2:34:31 PM
  *
- * @author Kevin V. Bui (kvb2@pitt.edu)
+ * @author Kevin V. Bui (kvb2univpitt@gmail.com)
  */
 @Controller
-public class ApplicationController {
+public class PatientController {
 
-    private final ResourceCountService resourceCountService;
+    private final PatientResourceService patientResourceService;
+    private final IParser jsonParser;
 
     @Autowired
-    public ApplicationController(ResourceCountService resourceCountService) {
-        this.resourceCountService = resourceCountService;
+    public PatientController(PatientResourceService patientResourceService, IParser jsonParser) {
+        this.patientResourceService = patientResourceService;
+        this.jsonParser = jsonParser;
     }
 
-    @GetMapping("/")
-    public String showIndexPage(final Authentication authen) {
-        return (authen == null) ? "login" : "redirect:/fhir";
-    }
-
-    @GetMapping("/fhir")
-    public String showMainResourcePage(
-            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
+    @GetMapping("/fhir/patients")
+    public String showPatientResourceListPage(
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
             final Model model) {
-        model.addAttribute("authenName", authClient.getPrincipalName());
-        model.addAttribute("dashboard", true);
-        model.addAttribute("patientCounts", resourceCountService.getPatientCounts(authClient.getAccessToken()));
-        model.addAttribute("encounterCounts", resourceCountService.getEncounterCounts(authClient.getAccessToken()));
-        model.addAttribute("observationCounts", resourceCountService.getObservationCounts(authClient.getAccessToken()));
+        model.addAttribute("authenName", authorizedClient.getPrincipalName());
+        model.addAttribute("patient", true);
 
-        return "fhir/dashboard";
+        return "fhir/patients";
     }
 
 }

@@ -45,6 +45,21 @@ public class PatientResourceService extends AbstractResourceService {
         super(fhirUrl, fhirContext);
     }
 
+    public Patient getPatient(final OAuth2AccessToken accessToken, final String id) {
+        Bundle bundle = getClient(accessToken)
+                .search()
+                .forResource(Patient.class)
+                .where(Patient.RES_ID.exactly().identifier(id))
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
+
+        return bundle.getEntry().stream()
+                .map(e -> (Patient) e.getResource())
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<Patient> getPatients(OAuth2AccessToken accessToken) {
         IGenericClient client = getClient(accessToken);
 

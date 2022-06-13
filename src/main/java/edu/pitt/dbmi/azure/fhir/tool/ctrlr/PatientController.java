@@ -20,12 +20,14 @@ package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 
 import ca.uhn.fhir.parser.IParser;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.PatientResourceService;
+import org.hl7.fhir.r4.model.Patient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 /**
  *
@@ -43,6 +45,20 @@ public class PatientController {
     public PatientController(PatientResourceService patientResourceService, IParser jsonParser) {
         this.patientResourceService = patientResourceService;
         this.jsonParser = jsonParser;
+    }
+
+    @GetMapping("/fhir/Patient/{id}")
+    public String showPatientResourceLPage(
+            @PathVariable final String id,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
+            final Model model) {
+        Patient patient = patientResourceService.getPatient(authorizedClient.getAccessToken(), id);
+
+        model.addAttribute("authenName", authorizedClient.getPrincipalName());
+        model.addAttribute("patient", patient);
+        model.addAttribute("json", jsonParser.encodeResourceToString(patient));
+
+        return "fhir/patient";
     }
 
     @GetMapping("/fhir/patients")

@@ -45,6 +45,21 @@ public class EncounterResourceService extends AbstractResourceService {
         super(fhirUrl, fhirContext);
     }
 
+    public Encounter getEncounter(final OAuth2AccessToken accessToken, final String id) {
+        Bundle bundle = getClient(accessToken)
+                .search()
+                .forResource(Encounter.class)
+                .where(Encounter.RES_ID.exactly().identifier(id))
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
+
+        return bundle.getEntry().stream()
+                .map(e -> (Encounter) e.getResource())
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<Encounter> getEncounters(OAuth2AccessToken accessToken) {
         IGenericClient client = getClient(accessToken);
 

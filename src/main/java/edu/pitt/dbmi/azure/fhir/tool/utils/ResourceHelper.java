@@ -21,6 +21,7 @@ package edu.pitt.dbmi.azure.fhir.tool.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.pitt.dbmi.azure.fhir.tool.model.Code;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.Address;
@@ -44,6 +45,10 @@ public final class ResourceHelper {
 
     public ResourceHelper() {
         this.objectMapper = new ObjectMapper();
+    }
+
+    public String formatDateTime(Date date) {
+        return DateFormatters.formatToMonthDayYearHourMinute(date);
     }
 
     public String getExtensionValue(Type type) {

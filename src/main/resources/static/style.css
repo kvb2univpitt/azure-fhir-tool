@@ -69,3 +69,11 @@
     width: 1.8rem;
     font-size: 0.75rem;
 }
+
+.caption {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    color: #6c757d;
+    text-align: left;
+    border-bottom: #000 2px solid;
+}

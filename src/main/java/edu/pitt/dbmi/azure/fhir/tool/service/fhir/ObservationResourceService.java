@@ -45,6 +45,21 @@ public class ObservationResourceService extends AbstractResourceService {
         super(fhirUrl, fhirContext);
     }
 
+    public Observation getObservation(final OAuth2AccessToken accessToken, final String id) {
+        Bundle bundle = getClient(accessToken)
+                .search()
+                .forResource(Observation.class)
+                .where(Observation.RES_ID.exactly().identifier(id))
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
+
+        return bundle.getEntry().stream()
+                .map(e -> (Observation) e.getResource())
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<Observation> getObservations(OAuth2AccessToken accessToken) {
         IGenericClient client = getClient(accessToken);
 

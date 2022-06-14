@@ -26,10 +26,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.DecimalType;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Quantity;
 import org.hl7.fhir.r4.model.StringType;
 import org.hl7.fhir.r4.model.Type;
 
@@ -51,6 +53,22 @@ public final class ResourceHelper {
         return DateFormatters.formatToMonthDayYearHourMinute(date);
     }
 
+    public String getValue(Type type) {
+        if (type instanceof Quantity quantity) {
+            return String.format("%s %s", quantity.getValue(), quantity.getUnit());
+        } else if (type instanceof StringType stringType) {
+            return stringType.getValue();
+        } else if (type instanceof CodeType codeType) {
+            return codeType.getValue();
+        } else if (type instanceof CodeableConcept codeableConcept) {
+            return codeableConcept.getText();
+        } else if (type instanceof DecimalType decimalType) {
+            return decimalType.getValueAsString();
+        } else {
+            return "";
+        }
+    }
+
     public String getExtensionValue(Type type) {
         if (type instanceof StringType stringType) {
             return stringType.getValue();
@@ -63,6 +81,15 @@ public final class ResourceHelper {
             sb.append(String.format("City=%s, ", address.getCity()));
             sb.append(String.format("State-%s, ", address.getState()));
             sb.append(String.format("Country=%s", address.getCountry()));
+            sb.append("]");
+
+            return sb.toString();
+        } else if (type instanceof Quantity quantity) {
+            StringBuilder sb = new StringBuilder("Quantity [");
+            sb.append(String.format("Value=%s, ", quantity.getValue()));
+            sb.append(String.format("Unit-%s, ", quantity.getUnit()));
+            sb.append(String.format("System=%s, ", quantity.getSystem()));
+            sb.append(String.format("Code=%s", quantity.getCode()));
             sb.append("]");
 
             return sb.toString();

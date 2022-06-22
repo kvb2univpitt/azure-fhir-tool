@@ -54,12 +54,12 @@
                                         </tr>
                                         <tr>
                                             <th scope="row">Effective Date</th>
-                                            <td th:text="${@resourceHelper.formatDateTime(observation.getEffectiveDateTimeType().getValue())}" />
+                                            <td th:text="${observation.getEffectiveDateTimeType()} ? ${@resourceHelper.formatDateTime(observation.getEffectiveDateTimeType().getValue())} : ''" />
                                             <td></td>
                                         </tr>
                                         <tr>
                                             <th scope="row">Issued</th>
-                                            <td th:text="${@resourceHelper.formatDateTime(observation.getIssued())}" />
+                                            <td th:text="${observation.getIssued()} ? ${@resourceHelper.formatDateTime(observation.getIssued())} : ''" />
                                             <td></td>
                                         </tr>
                                         <tr>

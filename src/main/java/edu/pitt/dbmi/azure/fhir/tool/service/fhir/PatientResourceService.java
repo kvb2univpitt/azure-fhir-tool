@@ -22,8 +22,10 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import edu.pitt.dbmi.azure.fhir.tool.service.AbstractResourceService;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +75,46 @@ public class PatientResourceService extends AbstractResourceService {
         return fetchAllResources(client, bundle).stream()
                 .map(e -> (Patient) e)
                 .collect(Collectors.toList());
+    }
+
+    public List<Patient> getPatients(OAuth2AccessToken accessToken, int start, int length) {
+        List<Patient> patients = new LinkedList<>();
+
+        IGenericClient client = getClient(accessToken);
+        Bundle bundle = client
+                .search()
+                .forResource(Patient.class)
+                .sort().ascending(Patient.NAME)
+                .returnBundle(Bundle.class)
+                .execute();
+
+        int offset = start;
+        int size = start + length;
+        int index = 0;
+        boolean fetchMore = index < size;
+        for (Bundle.BundleEntryComponent component : bundle.getEntry()) {
+            if (fetchMore) {
+                if (offset <= index) {
+                    patients.add((Patient) component.getResource());
+                }
+                index++;
+                fetchMore = index < size;
+            }
+        }
+        while (fetchMore && bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
+            bundle = client.loadPage().next(bundle).execute();
+            for (Bundle.BundleEntryComponent component : bundle.getEntry()) {
+                if (fetchMore) {
+                    if (offset <= index) {
+                        patients.add((Patient) component.getResource());
+                    }
+                    index++;
+                    fetchMore = index < size;
+                }
+            }
+        }
+
+        return patients;
     }
 
 }

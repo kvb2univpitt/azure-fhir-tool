@@ -19,8 +19,11 @@
 package edu.pitt.dbmi.azure.fhir.tool.ctrlr.rest;
 
 import edu.pitt.dbmi.azure.fhir.tool.model.BasicPatient;
+import edu.pitt.dbmi.azure.fhir.tool.model.BasicPatientSearchResults;
+import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.PatientResourceService;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.Patient;
@@ -30,6 +33,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -43,17 +47,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class PatientRestController {
 
     private final PatientResourceService patientResourceService;
+    private final ResourceCountService resourceCountService;
 
     @Autowired
-    public PatientRestController(PatientResourceService patientResourceService) {
+    public PatientRestController(PatientResourceService patientResourceService, ResourceCountService resourceCountService) {
         this.patientResourceService = patientResourceService;
+        this.resourceCountService = resourceCountService;
     }
 
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<BasicPatient> getPatients(@RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient) {
-        return patientResourceService.getPatients(authorizedClient.getAccessToken()).stream()
-                .map(e -> toBasicPatient(e))
-                .collect(Collectors.toList());
+    public BasicPatientSearchResults getPatients(
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
+            @RequestParam("start") Optional<Integer> start,
+            @RequestParam("length") Optional<Integer> length) {
+        List<Patient> patients = (start.isPresent() && length.isPresent())
+                ? patientResourceService.getPatients(authClient.getAccessToken(), start.get(), length.get())
+                : patientResourceService.getPatients(authClient.getAccessToken());
+        int counts = resourceCountService.getPatientCounts(authClient.getAccessToken());
+
+        BasicPatientSearchResults results = new BasicPatientSearchResults();
+        results.setBasicPatients(patients.stream().map(e -> toBasicPatient(e)).collect(Collectors.toList()));
+        results.setRecordsTotal(counts);
+        results.setRecordsFiltered(counts);
+
+        return results;
     }
 
     private BasicPatient toBasicPatient(Patient patient) {

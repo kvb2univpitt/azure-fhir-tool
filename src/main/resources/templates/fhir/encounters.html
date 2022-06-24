@@ -60,13 +60,15 @@
                 $('#encounters').DataTable({
                     pageLength: 25,
                     responsive: true,
+                    processing: true,
+                    serverSide: true,
                     ajax: {
                         url: 'api/encounter/',
                         type: 'GET',
                         dataType: 'json',
                         cache: false,
                         contentType: 'application/json; charset=utf-8',
-                        dataSrc: ''
+                        dataSrc: 'basicEncounters'
                     },
                     columns: [
                         {data: 'type'},

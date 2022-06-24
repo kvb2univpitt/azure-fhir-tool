@@ -19,10 +19,13 @@
 package edu.pitt.dbmi.azure.fhir.tool.ctrlr.rest;
 
 import edu.pitt.dbmi.azure.fhir.tool.model.BasicEncounter;
+import edu.pitt.dbmi.azure.fhir.tool.model.BasicEncounterSearchResults;
+import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.EncounterResourceService;
 import edu.pitt.dbmi.azure.fhir.tool.utils.DateFormatters;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.Encounter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +34,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -44,17 +48,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class EncounterRestController {
 
     private final EncounterResourceService encounterResourceService;
+    private final ResourceCountService resourceCountService;
 
     @Autowired
-    public EncounterRestController(EncounterResourceService encounterResourceService) {
+    public EncounterRestController(EncounterResourceService encounterResourceService, ResourceCountService resourceCountService) {
         this.encounterResourceService = encounterResourceService;
+        this.resourceCountService = resourceCountService;
     }
 
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<BasicEncounter> getBasicEncounters(@RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient) {
-        return encounterResourceService.getEncounters(authClient.getAccessToken()).stream()
-                .map(e -> toBasicEncounter(e))
-                .collect(Collectors.toList());
+    public BasicEncounterSearchResults getBasicEncounters(
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
+            @RequestParam("start") Optional<Integer> start,
+            @RequestParam("length") Optional<Integer> length) {
+        List<Encounter> encounters = (start.isPresent() && length.isPresent())
+                ? encounterResourceService.getEncounters(authClient.getAccessToken(), start.get(), length.get())
+                : encounterResourceService.getEncounters(authClient.getAccessToken());
+        int counts = resourceCountService.getEncounterCounts(authClient.getAccessToken());
+
+        BasicEncounterSearchResults results = new BasicEncounterSearchResults();
+        results.setBasicEncounters(encounters.stream().map(e -> toBasicEncounter(e)).collect(Collectors.toList()));
+        results.setRecordsTotal(counts);
+        results.setRecordsFiltered(counts);
+
+        return results;
     }
 
     private BasicEncounter toBasicEncounter(Encounter encounter) {

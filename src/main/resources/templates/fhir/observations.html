@@ -59,13 +59,15 @@
                 $('#observations').DataTable({
                     pageLength: 25,
                     responsive: true,
+                    processing: true,
+                    serverSide: true,
                     ajax: {
                         url: 'api/observation/',
                         type: 'GET',
                         dataType: 'json',
                         cache: false,
                         contentType: 'application/json; charset=utf-8',
-                        dataSrc: ''
+                        dataSrc: 'basicObservations'
                     },
                     columns: [
                         {data: 'category'},

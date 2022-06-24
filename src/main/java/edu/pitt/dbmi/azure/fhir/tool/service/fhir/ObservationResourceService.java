@@ -22,8 +22,10 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import edu.pitt.dbmi.azure.fhir.tool.service.AbstractResourceService;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Observation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +75,49 @@ public class ObservationResourceService extends AbstractResourceService {
         return fetchAllResources(client, bundle).stream()
                 .map(e -> (Observation) e)
                 .collect(Collectors.toList());
+    }
+
+    public List<Observation> getObservations(OAuth2AccessToken accessToken, int start, int length) {
+        List<Observation> observations = new LinkedList<>();
+
+        int size = start + length;
+        int count = (size < 1000) ? size : 1000;
+        IGenericClient client = getClient(accessToken);
+        Bundle bundle = client
+                .search()
+                .forResource(Observation.class)
+                .sort().ascending(Observation.DATE)
+                .count(count)
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
+
+        int offset = start;
+        int index = 0;
+        boolean fetchMore = index < size;
+        for (Bundle.BundleEntryComponent component : bundle.getEntry()) {
+            if (fetchMore) {
+                if (offset <= index) {
+                    observations.add((Observation) component.getResource());
+                }
+                index++;
+                fetchMore = index < size;
+            }
+        }
+        while (fetchMore && bundle.getLink(IBaseBundle.LINK_NEXT) != null) {
+            bundle = client.loadPage().next(bundle).execute();
+            for (Bundle.BundleEntryComponent component : bundle.getEntry()) {
+                if (fetchMore) {
+                    if (offset <= index) {
+                        observations.add((Observation) component.getResource());
+                    }
+                    index++;
+                    fetchMore = index < size;
+                }
+            }
+        }
+
+        return observations;
     }
 
 }

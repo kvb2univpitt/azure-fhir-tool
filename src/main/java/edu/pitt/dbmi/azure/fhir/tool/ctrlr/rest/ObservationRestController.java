@@ -19,9 +19,12 @@
 package edu.pitt.dbmi.azure.fhir.tool.ctrlr.rest;
 
 import edu.pitt.dbmi.azure.fhir.tool.model.BasicObservation;
+import edu.pitt.dbmi.azure.fhir.tool.model.BasicObservationSearchResults;
+import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.ObservationResourceService;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Observation;
@@ -31,6 +34,7 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -44,17 +48,30 @@ import org.springframework.web.bind.annotation.RestController;
 public class ObservationRestController {
 
     private final ObservationResourceService observationResourceService;
+    private final ResourceCountService resourceCountService;
 
     @Autowired
-    public ObservationRestController(ObservationResourceService observationResourceService) {
+    public ObservationRestController(ObservationResourceService observationResourceService, ResourceCountService resourceCountService) {
         this.observationResourceService = observationResourceService;
+        this.resourceCountService = resourceCountService;
     }
 
     @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<BasicObservation> getBasicObservations(@RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient) {
-        return observationResourceService.getObservations(authorizedClient.getAccessToken()).stream()
-                .map(e -> toBasicObservation(e))
-                .collect(Collectors.toList());
+    public BasicObservationSearchResults getBasicObservations(
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
+            @RequestParam("start") Optional<Integer> start,
+            @RequestParam("length") Optional<Integer> length) {
+        List<Observation> observations = (start.isPresent() && length.isPresent())
+                ? observationResourceService.getObservations(authClient.getAccessToken(), start.get(), length.get())
+                : observationResourceService.getObservations(authClient.getAccessToken());
+        int counts = resourceCountService.getObservationCounts(authClient.getAccessToken());
+        
+        BasicObservationSearchResults results = new BasicObservationSearchResults();
+        results.setBasicObservations(observations.stream().map(e -> toBasicObservation(e)).collect(Collectors.toList()));
+        results.setRecordsTotal(counts);
+        results.setRecordsFiltered(counts);
+        
+        return results;
     }
 
     private BasicObservation toBasicObservation(Observation observation) {

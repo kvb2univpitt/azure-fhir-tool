@@ -80,16 +80,18 @@ public class PatientResourceService extends AbstractResourceService {
     public List<Patient> getPatients(OAuth2AccessToken accessToken, int start, int length) {
         List<Patient> patients = new LinkedList<>();
 
+        int size = start + length;
+        int count = (size < 1000) ? size : 1000;
         IGenericClient client = getClient(accessToken);
         Bundle bundle = client
                 .search()
                 .forResource(Patient.class)
                 .sort().ascending(Patient.NAME)
+                .count(count)
                 .returnBundle(Bundle.class)
                 .execute();
 
         int offset = start;
-        int size = start + length;
         int index = 0;
         boolean fetchMore = index < size;
         for (Bundle.BundleEntryComponent component : bundle.getEntry()) {

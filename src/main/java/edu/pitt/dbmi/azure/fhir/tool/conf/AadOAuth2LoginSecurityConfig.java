@@ -37,7 +37,9 @@ public class AadOAuth2LoginSecurityConfig extends AadWebSecurityConfigurerAdapte
     protected void configure(HttpSecurity http) throws Exception {
         super.configure(http);
 
-        http.authorizeRequests()
+        http
+                .csrf().disable()
+                .authorizeRequests()
                 .antMatchers("/fhir/**").authenticated()
                 .anyRequest().permitAll();
     }

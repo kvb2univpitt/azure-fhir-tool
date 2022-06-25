@@ -22,8 +22,16 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import edu.pitt.dbmi.azure.fhir.tool.service.AbstractResourceService;
+import edu.pitt.dbmi.fhir.resource.mapper.r4.brainai.PatientResourceMapper;
+import edu.pitt.dbmi.fhir.resource.mapper.util.Delimiters;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.Bundle;
@@ -32,6 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
@@ -75,6 +84,57 @@ public class PatientResourceService extends AbstractResourceService {
         return fetchAllResources(client, bundle).stream()
                 .map(e -> (Patient) e)
                 .collect(Collectors.toList());
+    }
+
+    public List<Patient> getPatients(List<String> lines, int start, int length) {
+        List<Patient> patients = new LinkedList<>();
+
+        Pattern delimiter = Delimiters.TAB_DELIM;
+        int size = start + length;
+        int offset = start;
+        int index = 0;
+        for (String line : lines) {
+            if (index >= size) {
+                break;
+            }
+
+            if (offset <= index) {
+                try {
+                    patients.add(PatientResourceMapper.getPatient(delimiter.split(line)));
+                } catch (ParseException exception) {
+                    exception.printStackTrace(System.err);
+                }
+            }
+            index++;
+        }
+
+        return patients;
+    }
+
+    public List<Patient> getPatients(MultipartFile multipartFile, int start, int length) {
+        if (multipartFile == null) {
+            return Collections.EMPTY_LIST;
+        }
+
+        List<Patient> patients = new LinkedList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(multipartFile.getInputStream()))) {
+            reader.readLine();
+
+            Pattern delimiter = Delimiters.TAB_DELIM;
+            int size = start + length;
+            int offset = start;
+            int index = 0;
+            for (String line = reader.readLine(); line != null && index < size; line = reader.readLine()) {
+                if (offset <= index) {
+                    patients.add(PatientResourceMapper.getPatient(delimiter.split(line)));
+                }
+                index++;
+            }
+        } catch (IOException | ParseException exception) {
+            exception.printStackTrace(System.err);
+        }
+
+        return patients;
     }
 
     public List<Patient> getPatients(OAuth2AccessToken accessToken, int start, int length) {

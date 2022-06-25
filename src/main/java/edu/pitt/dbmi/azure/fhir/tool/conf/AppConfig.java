@@ -35,7 +35,10 @@ public class AppConfig {
 
     @Bean
     public FhirContext fhirContext() {
-        return FhirContext.forR4();
+        FhirContext fhirContext = FhirContext.forR4();
+        fhirContext.getRestfulClientFactory().setSocketTimeout(200 * 1000);
+
+        return fhirContext;
     }
 
     @Bean

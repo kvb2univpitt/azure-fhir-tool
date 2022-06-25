@@ -22,7 +22,13 @@ import edu.pitt.dbmi.azure.fhir.tool.model.BasicPatient;
 import edu.pitt.dbmi.azure.fhir.tool.model.BasicPatientSearchResults;
 import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.PatientResourceService;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.HumanName;
@@ -32,9 +38,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
@@ -46,6 +54,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/fhir/api/patient")
 public class PatientRestController {
 
+    private final Map<String, List<String>> uploadedFiles = new HashMap<>();
+
     private final PatientResourceService patientResourceService;
     private final ResourceCountService resourceCountService;
 
@@ -55,7 +65,44 @@ public class PatientRestController {
         this.resourceCountService = resourceCountService;
     }
 
-    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "upload", produces = MediaType.APPLICATION_JSON_VALUE)
+    public void uploadPatients(@RequestParam("file") MultipartFile file) throws IOException {
+        uploadedFiles.clear();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            uploadedFiles.put(file.getOriginalFilename(), reader.lines().skip(1).collect(Collectors.toList()));
+        }
+    }
+
+    @GetMapping(value = "file", produces = MediaType.APPLICATION_JSON_VALUE)
+    public BasicPatientSearchResults getPatientsFromFile(
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
+            @RequestParam("start") Optional<Integer> start,
+            @RequestParam("length") Optional<Integer> length,
+            @RequestParam("file") Optional<String> file) {
+        int counts = 0;
+        List<Patient> patients;
+        if (start.isPresent() && length.isPresent() && file.isPresent()) {
+            String fileName = file.get();
+            if (uploadedFiles.containsKey(fileName)) {
+                List<String> lines = uploadedFiles.get(file.get());
+                patients = patientResourceService.getPatients(uploadedFiles.get(file.get()), start.get(), length.get());
+                counts = lines.size();
+            } else {
+                patients = Collections.EMPTY_LIST;
+            }
+        } else {
+            patients = Collections.EMPTY_LIST;
+        }
+
+        BasicPatientSearchResults results = new BasicPatientSearchResults();
+        results.setBasicPatients(patients.stream().map(e -> toBasicPatient(e)).collect(Collectors.toList()));
+        results.setRecordsTotal(counts);
+        results.setRecordsFiltered(counts);
+
+        return results;
+    }
+
+    @GetMapping(value = "azure", produces = MediaType.APPLICATION_JSON_VALUE)
     public BasicPatientSearchResults getPatients(
             @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
             @RequestParam("start") Optional<Integer> start,

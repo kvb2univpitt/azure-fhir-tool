@@ -5,62 +5,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="stylesheet" href="../../static/bootstrap/css/bootstrap.min.css" th:href="@{/bootstrap/css/bootstrap.min.css}" />
         <link rel="stylesheet" href="../../static/bootstrap-icons/bootstrap-icons.css" th:href="@{/bootstrap-icons/bootstrap-icons.css}" />
-        <link rel="stylesheet" href="../../static/style.css" th:href="@{/style.css}" />
+        <link rel="stylesheet" href="../../static/style.css" th:href="@{/style.min.css}" />
         <link rel="stylesheet" type="text/css" href="../../static/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.min.css" th:href="@{/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.min.css}" />
         <link rel="stylesheet" type="text/css" href="../../static/DataTables/FixedHeader-3.2.3/css/fixedHeader.bootstrap5.min.css" th:href="@{/DataTables/FixedHeader-3.2.3/css/fixedHeader.bootstrap5.min.css}" />
         <link rel="stylesheet" type="text/css" href="../../static/DataTables/Responsive-2.3.0/css/responsive.bootstrap5.min.css" th:href="@{/DataTables/Responsive-2.3.0/css/responsive.bootstrap5.min.css}" />
         <link rel="stylesheet" type="text/css" href="../../static/DataTables/Scroller-2.0.6/css/scroller.bootstrap5.min.css" th:href="@{/DataTables/Scroller-2.0.6/css/scroller.bootstrap5.min.css}" />
-        <style>
-            .resource-file {
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                font-family: 'Lato', sans-serif;
-            }
-            .file-drop-area {
-                position: relative;
-                display: flex;
-                align-items: center;
-                width: 450px;
-                max-width: 100%;
-                padding: 25px;
-                border: 1px dashed;
-                /*border: 1px dashed rgba(255, 255, 255, 0.4);*/
-                border-radius: 3px;
-                transition: 0.2s;
-            }
-
-            .choose-file-button {
-                flex-shrink: 0;
-                background-color: rgba(255, 255, 255, 0.04);
-                border: 1px solid;
-                border-radius: 3px;
-                padding: 8px 15px;
-                margin-right: 10px;
-                font-size: 12px;
-                text-transform: uppercase;
-            }
-
-            .file-message {
-                font-size: small;
-                font-weight: 300;
-                line-height: 1.4;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .file-input {
-                position: absolute;
-                left: 0;
-                top: 0;
-                height: 100%;
-                width: 100%;
-                cursor: pointer;
-                opacity: 0;
-
-            }
-        </style>
         <title>Azure FHIR Tool</title>
     </head>
     <body>
@@ -100,7 +49,7 @@
                             <div class="card mb-4">
                                 <div class="card-body">
                                     <p>Load patient resources from a tab-separated-value (tsv) file.</p>
-                                    <form id="load_form" method="POST" action="api/patient/upload" enctype="multipart/form-data">
+                                    <form id="load_form">
                                         <div class="resource-file bg-light mb-3">
                                             <div class="file-drop-area w-100">
                                                 <span class="choose-file-button">Choose files</span>
@@ -130,6 +79,12 @@
                                             </table>
                                         </div>
                                     </div>
+                                    <div class="card-footer">
+                                        <form id="upload_form" method="POST" action="patients/upload" enctype="multipart/form-data">
+                                            <input type="hidden" id="upload_filename" name="filename" value="" />
+                                            <button id="upload_submit_btn" class="btn btn-primary" type="submit">Upload</button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -147,7 +102,8 @@
         <script src="../../static/DataTables/Scroller-2.0.6/js/dataTables.scroller.min.js" th:src="@{/DataTables/Scroller-2.0.6/js/dataTables.scroller.min.js}"></script>
         <script>
             $(document).ready(function () {
-                $("#load_submit_btn").prop("disabled", true);
+                $('#load_submit_btn').prop("disabled", true);
+                $('#upload_submit_btn').prop("disabled", true);
 
                 $('#patients').DataTable({
                     pageLength: 10,
@@ -196,7 +152,12 @@
                         },
                         cache: false,
                         contentType: 'application/json; charset=utf-8',
-                        dataSrc: 'basicPatients'
+                        dataSrc: function (data) {
+                            $('#upload_filename').val(file);
+                            $('#upload_submit_btn').prop("disabled", false);
+
+                            return data.basicPatients;
+                        }
                     },
                     columns: [
                         {data: 'lastName'},
@@ -222,7 +183,7 @@
                     $.ajax({
                         type: "POST",
                         enctype: 'multipart/form-data',
-                        url: "api/patient/upload",
+                        url: "api/patient/load",
                         data: formData,
                         processData: false,
                         contentType: false,

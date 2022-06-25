@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -54,6 +55,36 @@ public class PatientResourceService extends AbstractResourceService {
     @Autowired
     public PatientResourceService(@Value("${fhir.url}") String fhirUrl, FhirContext fhirContext) {
         super(fhirUrl, fhirContext);
+    }
+
+    public void uploadPatients(List<String> data, OAuth2AccessToken accessToken) throws ParseException {
+        if (data == null || data.isEmpty()) {
+            return;
+        }
+
+        int batchSize = 500;
+        List<String> batch = new LinkedList<>();
+        for (String line : data) {
+            if (batch.size() == batchSize) {
+                addPatients(batch, accessToken);
+                batch.clear();
+            }
+
+            batch.add(line);
+        }
+
+        // upload the rest of the data
+        addPatients(batch, accessToken);
+        batch.clear();
+    }
+
+    private void addPatients(List<String> batch, OAuth2AccessToken accessToken) throws ParseException {
+        List<Resource> resources = new LinkedList<>();
+        for (String line : batch) {
+            resources.add(PatientResourceMapper.getPatient(Delimiters.TAB_DELIM.split(line)));
+        }
+
+        addResources(resources, "Patient", getClient(accessToken));
     }
 
     public Patient getPatient(final OAuth2AccessToken accessToken, final String id) {

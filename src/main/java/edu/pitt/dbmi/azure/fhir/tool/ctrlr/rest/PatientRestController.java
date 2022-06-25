@@ -22,13 +22,12 @@ import edu.pitt.dbmi.azure.fhir.tool.model.BasicPatient;
 import edu.pitt.dbmi.azure.fhir.tool.model.BasicPatientSearchResults;
 import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.PatientResourceService;
+import edu.pitt.dbmi.azure.fhir.tool.utils.FileStorage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hl7.fhir.r4.model.HumanName;
@@ -54,8 +53,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/fhir/api/patient")
 public class PatientRestController {
 
-    private final Map<String, List<String>> uploadedFiles = new HashMap<>();
-
     private final PatientResourceService patientResourceService;
     private final ResourceCountService resourceCountService;
 
@@ -65,11 +62,11 @@ public class PatientRestController {
         this.resourceCountService = resourceCountService;
     }
 
-    @PostMapping(value = "upload", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "load", produces = MediaType.APPLICATION_JSON_VALUE)
     public void uploadPatients(@RequestParam("file") MultipartFile file) throws IOException {
-        uploadedFiles.clear();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
-            uploadedFiles.put(file.getOriginalFilename(), reader.lines().skip(1).collect(Collectors.toList()));
+        FileStorage.clearAll();
+        try ( BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            FileStorage.add(file.getOriginalFilename(), reader.lines().skip(1).collect(Collectors.toList()));
         }
     }
 
@@ -82,14 +79,9 @@ public class PatientRestController {
         int counts = 0;
         List<Patient> patients;
         if (start.isPresent() && length.isPresent() && file.isPresent()) {
-            String fileName = file.get();
-            if (uploadedFiles.containsKey(fileName)) {
-                List<String> lines = uploadedFiles.get(file.get());
-                patients = patientResourceService.getPatients(uploadedFiles.get(file.get()), start.get(), length.get());
-                counts = lines.size();
-            } else {
-                patients = Collections.EMPTY_LIST;
-            }
+            List<String> lines = FileStorage.get(file.get());
+            patients = patientResourceService.getPatients(lines, start.get(), length.get());
+            counts = lines.size();
         } else {
             patients = Collections.EMPTY_LIST;
         }

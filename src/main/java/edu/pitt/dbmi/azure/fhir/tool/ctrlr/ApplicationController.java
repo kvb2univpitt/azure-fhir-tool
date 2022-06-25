@@ -19,6 +19,7 @@
 package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 
 import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
+import edu.pitt.dbmi.azure.fhir.tool.utils.FileStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -57,6 +58,8 @@ public class ApplicationController {
         model.addAttribute("patientCounts", resourceCountService.getPatientCounts(authClient.getAccessToken()));
         model.addAttribute("encounterCounts", resourceCountService.getEncounterCounts(authClient.getAccessToken()));
         model.addAttribute("observationCounts", resourceCountService.getObservationCounts(authClient.getAccessToken()));
+
+        FileStorage.clearAll();
 
         return "fhir/dashboard";
     }

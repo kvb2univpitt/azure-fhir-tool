@@ -20,6 +20,7 @@ package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 
 import ca.uhn.fhir.parser.IParser;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.ObservationResourceService;
+import edu.pitt.dbmi.azure.fhir.tool.utils.FileStorage;
 import org.hl7.fhir.r4.model.Observation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -67,6 +68,8 @@ public class ObservationController {
             final Model model) {
         model.addAttribute("authenName", authorizedClient.getPrincipalName());
         model.addAttribute("observation", true);
+
+        FileStorage.clearAll();
 
         return "fhir/observations";
     }

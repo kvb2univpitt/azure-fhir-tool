@@ -27,6 +27,7 @@ import java.util.List;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Resource;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 
 /**
@@ -43,6 +44,19 @@ public abstract class AbstractResourceService {
     public AbstractResourceService(String fhirUrl, FhirContext fhirContext) {
         this.fhirUrl = fhirUrl;
         this.fhirContext = fhirContext;
+    }
+
+    protected Bundle addResources(List<Resource> resources, String url, IGenericClient client) {
+        Bundle bundle = new Bundle();
+        bundle.setType(Bundle.BundleType.TRANSACTION);
+
+        resources.forEach(resource -> bundle.addEntry()
+                .setResource(resource)
+                .getRequest()
+                .setUrl(url)
+                .setMethod(Bundle.HTTPVerb.POST));
+
+        return client.transaction().withBundle(bundle).execute();
     }
 
     /**

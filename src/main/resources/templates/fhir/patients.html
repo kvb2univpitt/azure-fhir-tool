@@ -26,6 +26,7 @@
                         <li class="breadcrumb-item active">Patients</li>
                     </ol>
                     <div class="card mb-4">
+                        <div class="card-header">Patient Resource on Azure FHIR Server</div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-striped table-sm w-100" id="patients">
@@ -44,25 +45,28 @@
                         </div>
                     </div>
                     <div class="card mb-4">
+                        <div class="card-header">Resource Upload</div>
                         <div class="card-body">
-                            <h5 class="card-title">Upload File</h5>
+                            <div class="card-title">Load Patient Records</div>
                             <div class="card mb-4">
                                 <div class="card-body">
-                                    <p>Load patient resources from a tab-separated-value (tsv) file.</p>
+                                    <p>Load patient records from a tab-separated values (tsv) file.  Map each patient record to a patient resources.</p>
                                     <form id="load_form">
-                                        <div class="resource-file bg-light mb-3">
+                                        <div class="resource-file bg-light">
                                             <div class="file-drop-area w-100">
                                                 <span class="choose-file-button">Choose files</span>
                                                 <span class="file-message">or drag and drop files here</span>
                                                 <input class="file-input bg-secondary" type="file" name="file" />
                                             </div>
                                         </div>
-                                        <button id="load_submit_btn" class="btn btn-primary" type="submit">Load</button>
                                     </form>
+                                </div>
+                                <div class="card-footer">
+                                    <button id="load_submit_btn" class="btn btn-primary" type="submit">Load Patient Records</button>
                                 </div>
                             </div>
                             <div class="mt-4" id="preview" style="display: none;">
-                                <h5 class="card-title">Preview Resources</h5>
+                                <div class="card-title">Resource Upload Preview</div>
                                 <div class="card mb-4">
                                     <div class="card-body">
                                         <div class="table-responsive">
@@ -82,7 +86,7 @@
                                     <div class="card-footer">
                                         <form id="upload_form" method="POST" action="patients/upload" enctype="multipart/form-data">
                                             <input type="hidden" id="upload_filename" name="filename" value="" />
-                                            <button id="upload_submit_btn" class="btn btn-primary" type="submit">Upload</button>
+                                            <button id="upload_submit_btn" class="btn btn-primary" type="submit">Upload to Azure FHIR Server</button>
                                         </form>
                                     </div>
                                 </div>

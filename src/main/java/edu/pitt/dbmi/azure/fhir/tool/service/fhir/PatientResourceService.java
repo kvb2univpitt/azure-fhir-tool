@@ -57,8 +57,9 @@ public class PatientResourceService extends AbstractResourceService {
         super(fhirUrl, fhirContext);
     }
 
-    public Bundle deletePatients(OAuth2AccessToken accessToken) {
-        return deleteResources(getPatientBundle(accessToken), getClient(accessToken));
+    public void deletePatients(OAuth2AccessToken accessToken) {
+        int batchSize = 500;
+        deleteResources(getPatientBundle(accessToken, batchSize), batchSize, getClient(accessToken));
     }
 
     public void uploadPatients(List<String> data, OAuth2AccessToken accessToken) throws ParseException {
@@ -106,11 +107,12 @@ public class PatientResourceService extends AbstractResourceService {
                 .orElse(null);
     }
 
-    public Bundle getPatientBundle(OAuth2AccessToken accessToken) {
+    public Bundle getPatientBundle(OAuth2AccessToken accessToken, int batchSize) {
         return getClient(accessToken)
                 .search()
                 .forResource(Patient.class)
                 .returnBundle(Bundle.class)
+                .count(batchSize)
                 .cacheControl(new CacheControlDirective().setNoCache(true))
                 .execute();
     }

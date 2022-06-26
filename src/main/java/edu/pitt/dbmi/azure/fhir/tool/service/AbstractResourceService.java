@@ -45,16 +45,10 @@ public abstract class AbstractResourceService {
         this.fhirUrl = fhirUrl;
         this.fhirContext = fhirContext;
     }
-    
-    protected Bundle deleteResources(Bundle searchBundle, IGenericClient client) {
-        Bundle deleteBundle = new Bundle();
-        deleteBundle.setType(Bundle.BundleType.TRANSACTION);
 
-        searchBundle.getEntry()
-                .forEach(e -> deleteBundle
-                .addEntry()
-                .getRequest().setUrl(e.getFullUrl())
-                .setMethod(Bundle.HTTPVerb.DELETE));
+    protected void deleteResources(Bundle searchBundle, int batchSize, IGenericClient client) {
+        List<Bundle.BundleEntryComponent> entries = new LinkedList<>();
+        searchBundle.getEntry().forEach(entries::add);
 
         while (searchBundle.getLink(IBaseBundle.LINK_NEXT) != null) {
             searchBundle = client
@@ -62,14 +56,35 @@ public abstract class AbstractResourceService {
                     .next(searchBundle)
                     .execute();
 
-            searchBundle.getEntry().stream()
-                    .forEach(e -> deleteBundle
-                    .addEntry()
-                    .getRequest().setUrl(e.getFullUrl())
-                    .setMethod(Bundle.HTTPVerb.DELETE));
+            searchBundle.getEntry()
+                    .forEach(entry -> {
+                        if (entries.size() == batchSize) {
+                            deleteResources(entries, client);
+                            entries.clear();
+                        }
+
+                        entries.add(entry);
+                    });
         }
 
-        return client.transaction().withBundle(deleteBundle).execute();
+        deleteResources(entries, client);
+        entries.clear();
+    }
+
+    private void deleteResources(List<Bundle.BundleEntryComponent> entries, IGenericClient client) {
+        if (entries.isEmpty()) {
+            return;
+        }
+
+        Bundle deleteBundle = new Bundle();
+        deleteBundle.setType(Bundle.BundleType.BATCH);
+
+        entries.forEach(e -> deleteBundle
+                .addEntry()
+                .getRequest().setUrl(e.getFullUrl())
+                .setMethod(Bundle.HTTPVerb.DELETE));
+
+        client.transaction().withBundle(deleteBundle).execute();
     }
 
     protected Bundle addResources(List<Resource> resources, String url, IGenericClient client) {

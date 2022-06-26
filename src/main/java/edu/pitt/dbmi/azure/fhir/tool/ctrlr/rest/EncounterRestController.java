@@ -23,6 +23,11 @@ import edu.pitt.dbmi.azure.fhir.tool.model.BasicEncounterSearchResults;
 import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.EncounterResourceService;
 import edu.pitt.dbmi.azure.fhir.tool.utils.DateFormatters;
+import edu.pitt.dbmi.azure.fhir.tool.utils.FileStorage;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -33,9 +38,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
@@ -55,8 +62,40 @@ public class EncounterRestController {
         this.encounterResourceService = encounterResourceService;
         this.resourceCountService = resourceCountService;
     }
+    
+    @PostMapping(value = "load", produces = MediaType.APPLICATION_JSON_VALUE)
+    public void uploadEncounters(@RequestParam("file") MultipartFile file) throws IOException {
+        FileStorage.clearAll();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            FileStorage.add(file.getOriginalFilename(), reader.lines().skip(1).collect(Collectors.toList()));
+        }
+    }
 
-    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "file", produces = MediaType.APPLICATION_JSON_VALUE)
+    public BasicEncounterSearchResults getEncountersFromFile(
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
+            @RequestParam("start") Optional<Integer> start,
+            @RequestParam("length") Optional<Integer> length,
+            @RequestParam("file") Optional<String> file) {
+        int counts = 0;
+        List<Encounter> encounters;
+        if (start.isPresent() && length.isPresent() && file.isPresent()) {
+            List<String> lines = FileStorage.get(file.get());
+            encounters = encounterResourceService.getEncounters(lines, start.get(), length.get());
+            counts = lines.size();
+        } else {
+            encounters = Collections.EMPTY_LIST;
+        }
+
+        BasicEncounterSearchResults results = new BasicEncounterSearchResults();
+        results.setBasicEncounters(encounters.stream().map(e -> toBasicEncounter(e)).collect(Collectors.toList()));
+        results.setRecordsTotal(counts);
+        results.setRecordsFiltered(counts);
+
+        return results;
+    }
+
+    @GetMapping(value = "azure", produces = MediaType.APPLICATION_JSON_VALUE)
     public BasicEncounterSearchResults getBasicEncounters(
             @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
             @RequestParam("start") Optional<Integer> start,

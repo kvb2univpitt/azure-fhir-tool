@@ -21,6 +21,7 @@ package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 import ca.uhn.fhir.parser.IParser;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.EncounterResourceService;
 import edu.pitt.dbmi.azure.fhir.tool.utils.FileStorage;
+import java.text.ParseException;
 import org.hl7.fhir.r4.model.Encounter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -29,6 +30,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  *
@@ -48,14 +51,30 @@ public class EncounterController {
         this.jsonParser = jsonParser;
     }
 
+    @PostMapping(value = "/fhir/encounters/delete")
+    public String deleteAll(@RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient) throws ParseException {
+        encounterResourceService.deleteEncounters(authzClient.getAccessToken());
+
+        return "redirect:/fhir/encounters";
+    }
+
+    @PostMapping(value = "/fhir/encounters/upload")
+    public String upload(
+            @RequestParam("filename") String fileName,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient) throws ParseException {
+        encounterResourceService.uploadEncounters(FileStorage.get(fileName), authzClient.getAccessToken());
+
+        return "redirect:/fhir/encounters";
+    }
+
     @GetMapping("/fhir/Encounter/{id}")
     public String showPatientResourceLPage(
             @PathVariable final String id,
-            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient,
             final Model model) {
-        Encounter encounter = encounterResourceService.getEncounter(authorizedClient.getAccessToken(), id);
+        Encounter encounter = encounterResourceService.getEncounter(authzClient.getAccessToken(), id);
 
-        model.addAttribute("authenName", authorizedClient.getPrincipalName());
+        model.addAttribute("authenName", authzClient.getPrincipalName());
         model.addAttribute("encounter", encounter);
         model.addAttribute("json", jsonParser.encodeResourceToString(encounter));
 
@@ -64,9 +83,9 @@ public class EncounterController {
 
     @GetMapping("/fhir/encounters")
     public String showEncounterResourceListPage(
-            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient,
             final Model model) {
-        model.addAttribute("authenName", authorizedClient.getPrincipalName());
+        model.addAttribute("authenName", authzClient.getPrincipalName());
         model.addAttribute("encounter", true);
 
         FileStorage.clearAll();

@@ -22,12 +22,17 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import edu.pitt.dbmi.azure.fhir.tool.service.AbstractResourceService;
+import edu.pitt.dbmi.fhir.resource.mapper.r4.brainai.EncounterResourceMapper;
+import edu.pitt.dbmi.fhir.resource.mapper.util.Delimiters;
+import java.text.ParseException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -47,6 +52,41 @@ public class EncounterResourceService extends AbstractResourceService {
         super(fhirUrl, fhirContext);
     }
 
+    public void deleteEncounters(OAuth2AccessToken accessToken) {
+        int batchSize = 500;
+        deleteResources(getEncounterBundle(accessToken, batchSize), batchSize, getClient(accessToken));
+    }
+
+    public void uploadEncounters(List<String> data, OAuth2AccessToken accessToken) throws ParseException {
+        if (data == null || data.isEmpty()) {
+            return;
+        }
+
+        int batchSize = 500;
+        List<String> batch = new LinkedList<>();
+        for (String line : data) {
+            if (batch.size() == batchSize) {
+                addEncounters(batch, accessToken);
+                batch.clear();
+            }
+
+            batch.add(line);
+        }
+
+        // upload the rest of the data
+        addEncounters(batch, accessToken);
+        batch.clear();
+    }
+
+    private void addEncounters(List<String> batch, OAuth2AccessToken accessToken) throws ParseException {
+        List<Resource> resources = new LinkedList<>();
+        for (String line : batch) {
+            resources.add(EncounterResourceMapper.getEncounter(Delimiters.TAB_DELIM.split(line)));
+        }
+
+        addResources(resources, "Encounter", getClient(accessToken));
+    }
+
     public Encounter getEncounter(final OAuth2AccessToken accessToken, final String id) {
         Bundle bundle = getClient(accessToken)
                 .search()
@@ -62,6 +102,16 @@ public class EncounterResourceService extends AbstractResourceService {
                 .orElse(null);
     }
 
+    public Bundle getEncounterBundle(OAuth2AccessToken accessToken, int batchSize) {
+        return getClient(accessToken)
+                .search()
+                .forResource(Encounter.class)
+                .returnBundle(Bundle.class)
+                .count(batchSize)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
+    }
+
     public List<Encounter> getEncounters(OAuth2AccessToken accessToken) {
         IGenericClient client = getClient(accessToken);
 
@@ -75,6 +125,31 @@ public class EncounterResourceService extends AbstractResourceService {
         return fetchAllResources(client, bundle).stream()
                 .map(e -> (Encounter) e)
                 .collect(Collectors.toList());
+    }
+
+    public List<Encounter> getEncounters(List<String> lines, int start, int length) {
+        List<Encounter> encounters = new LinkedList<>();
+
+        Pattern delimiter = Delimiters.TAB_DELIM;
+        int size = start + length;
+        int offset = start;
+        int index = 0;
+        for (String line : lines) {
+            if (index >= size) {
+                break;
+            }
+
+            if (offset <= index) {
+                try {
+                    encounters.add(EncounterResourceMapper.getEncounter(delimiter.split(line)));
+                } catch (ParseException exception) {
+                    exception.printStackTrace(System.err);
+                }
+            }
+            index++;
+        }
+
+        return encounters;
     }
 
     public List<Encounter> getEncounters(OAuth2AccessToken accessToken, int start, int length) {

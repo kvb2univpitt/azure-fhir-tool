@@ -57,6 +57,10 @@ public class PatientResourceService extends AbstractResourceService {
         super(fhirUrl, fhirContext);
     }
 
+    public Bundle deletePatients(OAuth2AccessToken accessToken) {
+        return deleteResources(getPatientBundle(accessToken), getClient(accessToken));
+    }
+
     public void uploadPatients(List<String> data, OAuth2AccessToken accessToken) throws ParseException {
         if (data == null || data.isEmpty()) {
             return;
@@ -100,6 +104,15 @@ public class PatientResourceService extends AbstractResourceService {
                 .map(e -> (Patient) e.getResource())
                 .findFirst()
                 .orElse(null);
+    }
+
+    public Bundle getPatientBundle(OAuth2AccessToken accessToken) {
+        return getClient(accessToken)
+                .search()
+                .forResource(Patient.class)
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
     }
 
     public List<Patient> getPatients(OAuth2AccessToken accessToken) {

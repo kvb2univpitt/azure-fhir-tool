@@ -51,11 +51,18 @@ public class PatientController {
         this.jsonParser = jsonParser;
     }
 
+    @PostMapping(value = "/fhir/patients/delete")
+    public String deleteAll(@RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient) throws ParseException {
+        patientResourceService.deletePatients(authzClient.getAccessToken());
+
+        return "redirect:/fhir/patients";
+    }
+
     @PostMapping(value = "/fhir/patients/upload")
     public String upload(
             @RequestParam("filename") String fileName,
-            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient) throws ParseException {
-        patientResourceService.uploadPatients(FileStorage.get(fileName), authorizedClient.getAccessToken());
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient) throws ParseException {
+        patientResourceService.uploadPatients(FileStorage.get(fileName), authzClient.getAccessToken());
 
         return "redirect:/fhir/patients";
     }
@@ -63,11 +70,11 @@ public class PatientController {
     @GetMapping("/fhir/Patient/{id}")
     public String showPatientResourcePage(
             @PathVariable final String id,
-            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient,
             final Model model) {
-        Patient patient = patientResourceService.getPatient(authorizedClient.getAccessToken(), id);
+        Patient patient = patientResourceService.getPatient(authzClient.getAccessToken(), id);
 
-        model.addAttribute("authenName", authorizedClient.getPrincipalName());
+        model.addAttribute("authenName", authzClient.getPrincipalName());
         model.addAttribute("patient", patient);
         model.addAttribute("json", jsonParser.encodeResourceToString(patient));
 
@@ -76,9 +83,9 @@ public class PatientController {
 
     @GetMapping("/fhir/patients")
     public String showPatientResourceListPage(
-            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authorizedClient,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient,
             final Model model) {
-        model.addAttribute("authenName", authorizedClient.getPrincipalName());
+        model.addAttribute("authenName", authzClient.getPrincipalName());
         model.addAttribute("patient", true);
 
         FileStorage.clearAll();

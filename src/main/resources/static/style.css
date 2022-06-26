@@ -126,3 +126,14 @@
     cursor: pointer;
     opacity: 0;
 }
+
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+.dropdown.no-arrow .dropdown-toggle::after {
+    display: none;
+}
+.dropdown-menu-right {
+    right: 0;
+    left: auto;
+}

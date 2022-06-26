@@ -25,13 +25,17 @@ import edu.pitt.dbmi.azure.fhir.tool.service.AbstractResourceService;
 import edu.pitt.dbmi.fhir.resource.mapper.r4.brainai.EncounterResourceMapper;
 import edu.pitt.dbmi.fhir.resource.mapper.util.Delimiters;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,11 +66,12 @@ public class EncounterResourceService extends AbstractResourceService {
             return;
         }
 
+        Map<String, Patient> patientReferences = new HashMap<>();
         int batchSize = 500;
         List<String> batch = new LinkedList<>();
         for (String line : data) {
             if (batch.size() == batchSize) {
-                addEncounters(batch, accessToken);
+                addEncounters(batch, patientReferences, accessToken);
                 batch.clear();
             }
 
@@ -74,14 +79,30 @@ public class EncounterResourceService extends AbstractResourceService {
         }
 
         // upload the rest of the data
-        addEncounters(batch, accessToken);
+        addEncounters(batch, patientReferences, accessToken);
         batch.clear();
     }
 
-    private void addEncounters(List<String> batch, OAuth2AccessToken accessToken) throws ParseException {
+    private void addEncounters(List<String> batch, Map<String, Patient> patientReferences, OAuth2AccessToken accessToken) throws ParseException {
         List<Resource> resources = new LinkedList<>();
         for (String line : batch) {
-            resources.add(EncounterResourceMapper.getEncounter(Delimiters.TAB_DELIM.split(line)));
+            Encounter encounter = EncounterResourceMapper.getEncounter(Delimiters.TAB_DELIM.split(line));
+
+            Patient patient = patientReferences.get(encounter.getSubject().getReference());
+            if (patient == null) {
+                Resource resource = findPatient(encounter.getSubject(), getClient(accessToken)).getEntryFirstRep().getResource();
+                if (resource != null) {
+                    patient = (Patient) resource;
+                    patientReferences.put(encounter.getSubject().getReference(), patient);
+                }
+            }
+            if (patient != null) {
+                encounter.setSubject(new Reference()
+                        .setReference("Patient/" + patient.getIdElement().getIdPart())
+                        .setDisplay(patient.getNameFirstRep().getNameAsSingleString()));
+            }
+
+            resources.add(encounter);
         }
 
         addResources(resources, "Encounter", getClient(accessToken));

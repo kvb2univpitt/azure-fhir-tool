@@ -19,6 +19,7 @@
 package edu.pitt.dbmi.azure.fhir.tool.service;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
 import ca.uhn.fhir.util.BundleUtil;
@@ -27,6 +28,9 @@ import java.util.List;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Encounter;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Resource;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 
@@ -44,6 +48,26 @@ public abstract class AbstractResourceService {
     public AbstractResourceService(String fhirUrl, FhirContext fhirContext) {
         this.fhirUrl = fhirUrl;
         this.fhirContext = fhirContext;
+    }
+    
+    public Bundle findEncounter(Reference subject, IGenericClient client) {
+        return client
+                .search()
+                .forResource(Encounter.class)
+                .where(Patient.IDENTIFIER.exactly().systemAndValues("urn:oid:2.16.840.1.113883.3.552", subject.getReference()))
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
+    }
+
+    public Bundle findPatient(Reference subject, IGenericClient client) {
+        return client
+                .search()
+                .forResource(Patient.class)
+                .where(Patient.IDENTIFIER.exactly().systemAndValues("urn:oid:2.16.840.1.113883.3.552", subject.getReference()))
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .execute();
     }
 
     protected void deleteResources(Bundle searchBundle, int batchSize, IGenericClient client) {

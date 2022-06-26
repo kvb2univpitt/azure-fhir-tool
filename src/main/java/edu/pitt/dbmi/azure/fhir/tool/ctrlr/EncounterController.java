@@ -68,7 +68,7 @@ public class EncounterController {
     }
 
     @GetMapping("/fhir/Encounter/{id}")
-    public String showPatientResourceLPage(
+    public String showEncounterResourcePage(
             @PathVariable final String id,
             @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient,
             final Model model) {

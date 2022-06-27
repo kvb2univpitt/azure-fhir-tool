@@ -21,6 +21,7 @@ package edu.pitt.dbmi.azure.fhir.tool.ctrlr;
 import ca.uhn.fhir.parser.IParser;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.ObservationResourceService;
 import edu.pitt.dbmi.azure.fhir.tool.utils.FileStorage;
+import java.text.ParseException;
 import org.hl7.fhir.r4.model.Observation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -29,6 +30,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  *
@@ -46,6 +49,22 @@ public class ObservationController {
     public ObservationController(ObservationResourceService observationResourceService, IParser jsonParser) {
         this.observationResourceService = observationResourceService;
         this.jsonParser = jsonParser;
+    }
+
+    @PostMapping(value = "/fhir/observations/delete")
+    public String deleteAll(@RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient) throws ParseException {
+        observationResourceService.deleteObservations(authzClient.getAccessToken());
+
+        return "redirect:/fhir/observations";
+    }
+
+    @PostMapping(value = "/fhir/observations/upload")
+    public String upload(
+            @RequestParam("filename") String fileName,
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authzClient) throws ParseException {
+        observationResourceService.uploadObservations(FileStorage.get(fileName), authzClient.getAccessToken());
+
+        return "redirect:/fhir/observations";
     }
 
     @GetMapping("/fhir/Observation/{id}")

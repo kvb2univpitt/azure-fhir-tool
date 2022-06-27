@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Azure FHIR Tool</title>
         <link rel="stylesheet" href="../../static/bootstrap/css/bootstrap.min.css" th:href="@{/bootstrap/css/bootstrap.min.css}" />
         <link rel="stylesheet" href="../../static/bootstrap-icons/bootstrap-icons.css" th:href="@{/bootstrap-icons/bootstrap-icons.css}" />
         <link rel="stylesheet" href="../../static/style.css" th:href="@{/style.min.css}" />
@@ -10,7 +11,6 @@
         <link rel="stylesheet" type="text/css" href="../../static/DataTables/FixedHeader-3.2.3/css/fixedHeader.bootstrap5.min.css" th:href="@{/DataTables/FixedHeader-3.2.3/css/fixedHeader.bootstrap5.min.css}" />
         <link rel="stylesheet" type="text/css" href="../../static/DataTables/Responsive-2.3.0/css/responsive.bootstrap5.min.css" th:href="@{/DataTables/Responsive-2.3.0/css/responsive.bootstrap5.min.css}" />
         <link rel="stylesheet" type="text/css" href="../../static/DataTables/Scroller-2.0.6/css/scroller.bootstrap5.min.css" th:href="@{/DataTables/Scroller-2.0.6/css/scroller.bootstrap5.min.css}" />
-        <title>Azure FHIR Tool</title>
     </head>
     <body>
         <header class="navbar navbar-dark sticky-top bg-secondary flex-md-nowrap p-0 shadow" th:replace="fhir/fragments/top-navbar.html :: top-nav"></header>
@@ -25,7 +25,18 @@
                         <li class="breadcrumb-item"><a href="#" th:href="@{/fhir}">Dashboard</a></li>
                         <li class="breadcrumb-item active">Observations</li>
                     </ol>
-                    <div class="card mb-4">
+                    <div class="card shadow mb-5">
+                        <div class="card-header d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Observation</h6>
+                            <div class="dropdown no-arrow">
+                                <a class="dropdown-toggle" href="#" role="button" id="resourceOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical text-black-50"></i>
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="resourceOptions">
+                                    <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteAllModal"><i class="bi bi-trash3-fill"></i> Delete All</a></li>
+                                </ul>
+                            </div>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-striped table-sm w-100" id="observations">
@@ -43,11 +54,77 @@
                             </div>
                         </div>
                     </div>
+                    <div class="card shadow mt-5 mb-5">
+                        <div class="card-header">Resource Upload</div>
+                        <div class="card-body">
+                            <div class="card-title">Load Observation Records</div>
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <p>Load observation records from a tab-separated values (tsv) file.  Map each observation record to a observation resources.</p>
+                                    <form id="load_form">
+                                        <div class="resource-file bg-light">
+                                            <div class="file-drop-area w-100">
+                                                <span class="choose-file-button">Choose files</span>
+                                                <span class="file-message">or drag and drop files here</span>
+                                                <input class="file-input bg-secondary" type="file" name="file" />
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="card-footer">
+                                    <button id="load_submit_btn" class="btn btn-primary" type="submit">Load Observation Records</button>
+                                </div>
+                            </div>
+                            <div class="mt-4" id="preview" style="display: none;">
+                                <div class="card-title">Resource Upload Preview</div>
+                                <div class="card mb-4">
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-sm w-100" id="preview-observations">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">Category</th>
+                                                        <th scope="col">Observation</th>
+                                                        <th scope="col">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <form id="upload_form" method="POST" action="observations/upload" enctype="multipart/form-data">
+                                            <input type="hidden" id="upload_filename" name="filename" value="" />
+                                            <button id="upload_submit_btn" class="btn btn-primary" type="submit">Upload to Azure FHIR Server</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </main>
             </div>
         </div>
+        <div class="modal fade" id="deleteAllModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteAllModalLabel">Delete All Observation Resources</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>                        
+                    </div>
+                    <div class="modal-body">Are you sure you want to delete all the observation resources on Azure FHIR server?</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <form id="upload_form" method="POST" action="observations/delete" enctype="multipart/form-data">
+                            <button type="submit" class="btn btn-danger"><i class="bi bi-trash3-fill"></i> Delete All</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         <script src="../../static/jquery/jquery-3.6.0.min.js" th:src="@{/jquery/jquery-3.6.0.min.js}"></script>
-        <script src="../../static/bootstrap/js/bootstrap.min.js" th:src="@{/bootstrap/js/bootstrap.min.js}"></script>
+        <script src="../../static/bootstrap/js/bootstrap.bundle.min.js" th:src="@{/bootstrap/js/bootstrap.bundle.min.js}"></script>
         <script src="../../static/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js" th:src="@{/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js}"></script>
         <script src="../../static/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js" th:src="@{/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js}"></script>
         <script src="../../static/DataTables/FixedHeader-3.2.3/js/dataTables.fixedHeader.min.js" th:src="@{/DataTables/FixedHeader-3.2.3/js/dataTables.fixedHeader.min.js}"></script>
@@ -62,7 +139,7 @@
                     processing: true,
                     serverSide: true,
                     ajax: {
-                        url: 'api/observation/',
+                        url: 'api/observation/azure',
                         type: 'GET',
                         dataType: 'json',
                         cache: false,
@@ -85,6 +162,70 @@
                             }
                         }
                     ]
+                });
+
+                let file = '';
+                let previewTable = $('#preview-observations').DataTable({
+                    pageLength: 10,
+                    responsive: true,
+                    processing: true,
+                    serverSide: true,
+                    deferLoading: 10,
+                    ajax: {
+                        url: 'api/observation/file',
+                        type: 'GET',
+                        dataType: 'json',
+                        data: function (d) {
+                            d.file = file;
+                        },
+                        cache: false,
+                        contentType: 'application/json; charset=utf-8',
+                        dataSrc: function (data) {
+                            $('#upload_filename').val(file);
+                            $('#upload_submit_btn').prop("disabled", false);
+
+                            return data.basicObservations;
+                        }
+                    },
+                    columns: [
+                        {data: 'category'},
+                        {data: 'observation'},
+                        {data: 'status'}
+                    ]
+                });
+
+                $('.file-input').on('change', function () {
+                    let fileName = $(this).val().split('\\').pop();
+
+                    $(this).prev().text(fileName);
+                    $("#load_submit_btn").prop("disabled", false);
+                    file = fileName;
+                });
+
+                $("#load_submit_btn").click(function (evt) {
+                    evt.preventDefault();
+
+                    $("#load_submit_btn").prop("disabled", true);
+
+                    let formData = new FormData($('#load_form')[0]);
+                    $.ajax({
+                        type: "POST",
+                        enctype: 'multipart/form-data',
+                        url: "api/observation/load",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
+                        timeout: 800000,
+                        success: function (data) {
+                            $('#preview').show();
+                            previewTable.ajax.reload();
+                        },
+                        error: function (e) {
+                            console.log("ERROR : ", e);
+                            $("#load_submit_btn").prop("disabled", false);
+                        }
+                    });
                 });
             });
         </script>

@@ -22,6 +22,11 @@ import edu.pitt.dbmi.azure.fhir.tool.model.BasicObservation;
 import edu.pitt.dbmi.azure.fhir.tool.model.BasicObservationSearchResults;
 import edu.pitt.dbmi.azure.fhir.tool.service.ResourceCountService;
 import edu.pitt.dbmi.azure.fhir.tool.service.fhir.ObservationResourceService;
+import edu.pitt.dbmi.azure.fhir.tool.utils.FileStorage;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -33,9 +38,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
@@ -56,7 +63,39 @@ public class ObservationRestController {
         this.resourceCountService = resourceCountService;
     }
 
-    @GetMapping(value = "/", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "load", produces = MediaType.APPLICATION_JSON_VALUE)
+    public void uploadObservations(@RequestParam("file") MultipartFile file) throws IOException {
+        FileStorage.clearAll();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            FileStorage.add(file.getOriginalFilename(), reader.lines().skip(1).collect(Collectors.toList()));
+        }
+    }
+
+    @GetMapping(value = "file", produces = MediaType.APPLICATION_JSON_VALUE)
+    public BasicObservationSearchResults getObservationsFromFile(
+            @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
+            @RequestParam("start") Optional<Integer> start,
+            @RequestParam("length") Optional<Integer> length,
+            @RequestParam("file") Optional<String> file) {
+        int counts = 0;
+        List<Observation> observations;
+        if (start.isPresent() && length.isPresent() && file.isPresent()) {
+            List<String> lines = FileStorage.get(file.get());
+            observations = observationResourceService.getObservations(lines, start.get(), length.get());
+            counts = lines.size();
+        } else {
+            observations = Collections.EMPTY_LIST;
+        }
+
+        BasicObservationSearchResults results = new BasicObservationSearchResults();
+        results.setBasicObservations(observations.stream().map(e -> toBasicObservation(e)).collect(Collectors.toList()));
+        results.setRecordsTotal(counts);
+        results.setRecordsFiltered(counts);
+
+        return results;
+    }
+
+    @GetMapping(value = "azure", produces = MediaType.APPLICATION_JSON_VALUE)
     public BasicObservationSearchResults getBasicObservations(
             @RegisteredOAuth2AuthorizedClient("azure") final OAuth2AuthorizedClient authClient,
             @RequestParam("start") Optional<Integer> start,
@@ -65,12 +104,12 @@ public class ObservationRestController {
                 ? observationResourceService.getObservations(authClient.getAccessToken(), start.get(), length.get())
                 : observationResourceService.getObservations(authClient.getAccessToken());
         int counts = resourceCountService.getObservationCounts(authClient.getAccessToken());
-        
+
         BasicObservationSearchResults results = new BasicObservationSearchResults();
         results.setBasicObservations(observations.stream().map(e -> toBasicObservation(e)).collect(Collectors.toList()));
         results.setRecordsTotal(counts);
         results.setRecordsFiltered(counts);
-        
+
         return results;
     }
 

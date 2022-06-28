@@ -98,7 +98,9 @@
                                     <div class="card-footer">
                                         <form id="upload_form" method="POST" action="encounters/upload" enctype="multipart/form-data">
                                             <input type="hidden" id="upload_filename" name="filename" value="" />
-                                            <button id="upload_submit_btn" class="btn btn-primary" type="submit">Upload to Azure FHIR Server</button>
+                                            <button id="upload_submit_btn" class="btn btn-primary" type="submit" data-bs-toggle="modal" data-bs-target="#progressModal">
+                                                <i class="bi bi-cloud-upload-fill"></i> Upload to Azure FHIR Server
+                                            </button>
                                         </form>
                                     </div>
                                 </div>
@@ -108,7 +110,23 @@
                 </main>
             </div>
         </div>
-        <div class="modal fade" id="deleteAllModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+        <div class="modal fade" id="progressModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="progressModalLabel">Progress</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -118,8 +136,10 @@
                     <div class="modal-body">Are you sure you want to delete all the encounter resources on Azure FHIR server?</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <form id="upload_form" method="POST" action="encounters/delete" enctype="multipart/form-data">
-                            <button type="submit" class="btn btn-danger"><i class="bi bi-trash3-fill"></i> Delete All</button>
+                        <form id="deleteForm" method="POST" action="encounters/delete" enctype="multipart/form-data">
+                            <button id="deleteBtn" type="submit" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#progressModal">
+                                <i class="bi bi-trash3-fill"></i> Delete All
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -135,6 +155,23 @@
         <script src="../../static/DataTables/Scroller-2.0.6/js/dataTables.scroller.min.js" th:src="@{/DataTables/Scroller-2.0.6/js/dataTables.scroller.min.js}"></script>
         <script>
             $(document).ready(function () {
+                $('#load_submit_btn').prop("disabled", true);
+                $('#upload_submit_btn').prop("disabled", true);
+
+                $("#upload_form").submit(function () {
+                    $('#upload_submit_btn').prop("disabled", true);
+                    $('#progressModalLabel').text("Uploading Encounter Resources");
+
+                    return true;
+                });
+
+                $('#deleteForm').submit(function () {
+                    $('#deleteBtn').prop("disabled", true);
+                    $('#progressModalLabel').text("Deleting Encounter Resources");
+
+                    return true;
+                });
+
                 $('#encounters').DataTable({
                     pageLength: 10,
                     responsive: true,
@@ -166,7 +203,7 @@
                         }
                     ]
                 });
-                
+
                 let file = '';
                 let previewTable = $('#preview-encounters').DataTable({
                     pageLength: 10,

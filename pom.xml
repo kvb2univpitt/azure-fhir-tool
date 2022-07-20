@@ -16,7 +16,7 @@
 
     <properties>
         <java.version>17</java.version>
-        <spring-cloud-azure.version>4.2.0</spring-cloud-azure.version>
+        <spring-cloud-azure.version>4.3.0</spring-cloud-azure.version>
         <maven.test.skip>true</maven.test.skip>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>

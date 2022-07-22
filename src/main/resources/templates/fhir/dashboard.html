@@ -48,6 +48,15 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Diagnostic Reports</h5>
+                                    <h5 class="card-subtitle mb-2"><span class="badge rounded-pill bg-primary" th:text="${diagnosticReportCounts}">0</span></h5>
+                                    <a href="#" th:href="@{/fhir/diagnostic-reports}" class="card-link">View</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </main>
             </div>

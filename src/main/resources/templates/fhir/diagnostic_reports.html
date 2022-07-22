@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Azure FHIR Tool</title>
+        <link rel="stylesheet" href="../../static/bootstrap/css/bootstrap.min.css" th:href="@{/bootstrap/css/bootstrap.min.css}" />
+        <link rel="stylesheet" href="../../static/bootstrap-icons/bootstrap-icons.css" th:href="@{/bootstrap-icons/bootstrap-icons.css}" />
+        <link rel="stylesheet" href="../../static/style.css" th:href="@{/style.min.css}" />
+        <link rel="stylesheet" type="text/css" href="../../static/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.min.css" th:href="@{/DataTables/DataTables-1.12.1/css/dataTables.bootstrap5.min.css}" />
+        <link rel="stylesheet" type="text/css" href="../../static/DataTables/FixedHeader-3.2.3/css/fixedHeader.bootstrap5.min.css" th:href="@{/DataTables/FixedHeader-3.2.3/css/fixedHeader.bootstrap5.min.css}" />
+        <link rel="stylesheet" type="text/css" href="../../static/DataTables/Responsive-2.3.0/css/responsive.bootstrap5.min.css" th:href="@{/DataTables/Responsive-2.3.0/css/responsive.bootstrap5.min.css}" />
+        <link rel="stylesheet" type="text/css" href="../../static/DataTables/Scroller-2.0.6/css/scroller.bootstrap5.min.css" th:href="@{/DataTables/Scroller-2.0.6/css/scroller.bootstrap5.min.css}" />
+    </head>
+    <body>
+        <header class="navbar navbar-dark sticky-top bg-secondary flex-md-nowrap p-0 shadow" th:replace="fhir/fragments/top-navbar.html :: top-nav"></header>
+        <div class="container-fluid">
+            <div class="row">
+                <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" th:replace="fhir/fragments/side-navbar.html :: side-nav"></nav>
+                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h2>Diagnostic Reports</h2>
+                    </div>
+                    <ol class="breadcrumb mb-4">
+                        <li class="breadcrumb-item"><a href="#" th:href="@{/fhir}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Diagnostic Reports</li>
+                    </ol>
+                    <div class="card shadow mb-5">
+                        <div class="card-header d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Diagnostic Report</h6>
+                            <div class="dropdown no-arrow">
+                                <a class="dropdown-toggle" href="#" role="button" id="resourceOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical text-black-50"></i>
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="resourceOptions">
+                                    <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#deleteAllModal"><i class="bi bi-trash3-fill"></i> Delete All</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm w-100" id="diagnosticReports">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Category</th>
+                                            <th scope="col">Effective Date</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">ID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow mt-5 mb-5">
+                        <div class="card-header">Resource Upload</div>
+                        <div class="card-body">
+                            <div class="card-title">Load Diagnostic Report Records</div>
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <p>Load diagnostic report records from a tab-separated values (tsv) file.  Map each observation record to a observation resources.</p>
+                                    <form id="load_form">
+                                        <div class="resource-file bg-light">
+                                            <div class="file-drop-area w-100">
+                                                <span class="choose-file-button">Choose files</span>
+                                                <span class="file-message">or drag and drop files here</span>
+                                                <input class="file-input bg-secondary" type="file" name="file" />
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="card-footer">
+                                    <button id="load_submit_btn" class="btn btn-primary" type="submit">Load Diagnostic Report Records</button>
+                                </div>
+                            </div>
+                            <div class="mt-4" id="preview" style="display: none;">
+                                <div class="card-title">Resource Upload Preview</div>
+                                <div class="card mb-4">
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-sm w-100" id="previewDiagnosticReports">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">Category</th>
+                                                        <th scope="col">Effective Date</th>
+                                                        <th scope="col">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <form id="upload_form" method="POST" action="diagnostic-reports/upload" enctype="multipart/form-data">
+                                            <input type="hidden" id="upload_filename" name="filename" value="" />
+                                            <button id="upload_submit_btn" class="btn btn-primary" type="submit" data-bs-toggle="modal" data-bs-target="#progressModal">
+                                                <i class="bi bi-cloud-upload-fill"></i> Upload to Azure FHIR Server
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        <div class="modal fade" id="progressModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="progressModalLabel">Progress</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteAllModalLabel">Delete All Diagnostic Report Resources</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>                        
+                    </div>
+                    <div class="modal-body">Are you sure you want to delete all the diagnostic report resources on Azure FHIR server?</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <form id="deleteForm" method="POST" action="diagnostic-reports/delete" enctype="multipart/form-data">
+                            <button id="deleteBtn" type="submit" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#progressModal">
+                                <i class="bi bi-trash3-fill"></i> Delete All
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="../../static/jquery/jquery-3.6.0.min.js" th:src="@{/jquery/jquery-3.6.0.min.js}"></script>
+        <script src="../../static/bootstrap/js/bootstrap.bundle.min.js" th:src="@{/bootstrap/js/bootstrap.bundle.min.js}"></script>
+        <script src="../../static/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js" th:src="@{/DataTables/DataTables-1.12.1/js/jquery.dataTables.min.js}"></script>
+        <script src="../../static/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js" th:src="@{/DataTables/DataTables-1.12.1/js/dataTables.bootstrap5.min.js}"></script>
+        <script src="../../static/DataTables/FixedHeader-3.2.3/js/dataTables.fixedHeader.min.js" th:src="@{/DataTables/FixedHeader-3.2.3/js/dataTables.fixedHeader.min.js}"></script>
+        <script src="../../static/DataTables/Responsive-2.3.0/js/dataTables.responsive.min.js" th:src="@{/DataTables/Responsive-2.3.0/js/dataTables.responsive.min.js}"></script>
+        <script src="../../static/DataTables/Responsive-2.3.0/js/responsive.bootstrap5.min.js" th:src="@{/DataTables/Responsive-2.3.0/js/responsive.bootstrap5.min.js}"></script>
+        <script src="../../static/DataTables/Scroller-2.0.6/js/dataTables.scroller.min.js" th:src="@{/DataTables/Scroller-2.0.6/js/dataTables.scroller.min.js}"></script>
+        <script>
+            $(document).ready(function () {
+                $('#load_submit_btn').prop("disabled", true);
+                $('#upload_submit_btn').prop("disabled", true);
+
+                $("#upload_form").submit(function () {
+                    $('#upload_submit_btn').prop("disabled", true);
+                    $('#progressModalLabel').text("Uploading Diagnostic Report Resources");
+
+                    return true;
+                });
+
+                $('#deleteForm').submit(function () {
+                    $('#deleteBtn').prop("disabled", true);
+                    $('#progressModalLabel').text("Deleting Diagnostic Report Resources");
+
+                    return true;
+                });
+
+                $('#diagnosticReports').DataTable({
+                    pageLength: 10,
+                    responsive: true,
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: 'api/diagnostic-report/azure',
+                        type: 'GET',
+                        dataType: 'json',
+                        cache: false,
+                        contentType: 'application/json; charset=utf-8',
+                        dataSrc: 'basicDiagnosticReports'
+                    },
+                    columns: [
+                        {data: 'category'},
+                        {data: 'effectiveDate'},
+                        {data: 'status'},
+                        {data: 'id'}
+                    ],
+                    columnDefs: [
+                        {
+                            targets: 3,
+                            searchable: false,
+                            orderable: false,
+                            render: function (data, type, row, meta) {
+                                return `<a href="DiagnosticReport/${row.id}" class="a-link-plain">${row.id}</a>`;
+                            }
+                        }
+                    ]
+                });
+
+                let file = '';
+                let previewTable = $('#previewDiagnosticReports').DataTable({
+                    pageLength: 10,
+                    responsive: true,
+                    processing: true,
+                    serverSide: true,
+                    deferLoading: 10,
+                    ajax: {
+                        url: 'api/diagnostic-report/file',
+                        type: 'GET',
+                        dataType: 'json',
+                        data: function (d) {
+                            d.file = file;
+                        },
+                        cache: false,
+                        contentType: 'application/json; charset=utf-8',
+                        dataSrc: function (data) {
+                            $('#upload_filename').val(file);
+                            $('#upload_submit_btn').prop("disabled", false);
+
+                            return data.basicDiagnosticReports;
+                        }
+                    },
+                    columns: [
+                        {data: 'category'},
+                        {data: 'effectiveDate'},
+                        {data: 'status'},
+                    ]
+                });
+
+                $('.file-input').on('change', function () {
+                    let fileName = $(this).val().split('\\').pop();
+
+                    $(this).prev().text(fileName);
+                    $("#load_submit_btn").prop("disabled", false);
+                    file = fileName;
+                });
+
+                $("#load_submit_btn").click(function (evt) {
+                    evt.preventDefault();
+
+                    $("#load_submit_btn").prop("disabled", true);
+
+                    let formData = new FormData($('#load_form')[0]);
+                    $.ajax({
+                        type: "POST",
+                        enctype: 'multipart/form-data',
+                        url: "api/diagnostic-report/load",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
+                        timeout: 800000,
+                        success: function (data) {
+                            $('#preview').show();
+                            previewTable.ajax.reload();
+                        },
+                        error: function (e) {
+                            console.log("ERROR : ", e);
+                            $("#load_submit_btn").prop("disabled", false);
+                        }
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>

@@ -58,6 +58,7 @@ public class ApplicationController {
         model.addAttribute("patientCounts", resourceCountService.getPatientCounts(authClient.getAccessToken()));
         model.addAttribute("encounterCounts", resourceCountService.getEncounterCounts(authClient.getAccessToken()));
         model.addAttribute("observationCounts", resourceCountService.getObservationCounts(authClient.getAccessToken()));
+        model.addAttribute("diagnosticReportCounts", resourceCountService.getDiagnosticReportCounts(authClient.getAccessToken()));
 
         FileStorage.clearAll();
 

@@ -22,6 +22,7 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.api.SummaryEnum;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.DiagnosticReport;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Patient;
@@ -70,6 +71,18 @@ public class ResourceCountService extends AbstractResourceService {
         Bundle bundle = getClient(accessToken)
                 .search()
                 .forResource(Observation.class)
+                .returnBundle(Bundle.class)
+                .cacheControl(new CacheControlDirective().setNoCache(true))
+                .summaryMode(SummaryEnum.COUNT)
+                .execute();
+
+        return bundle.getTotal();
+    }
+
+    public int getDiagnosticReportCounts(OAuth2AccessToken accessToken) {
+        Bundle bundle = getClient(accessToken)
+                .search()
+                .forResource(DiagnosticReport.class)
                 .returnBundle(Bundle.class)
                 .cacheControl(new CacheControlDirective().setNoCache(true))
                 .summaryMode(SummaryEnum.COUNT)
